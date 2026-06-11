@@ -1,0 +1,44 @@
+{
+  "payments-api": [
+    {
+      "deploy_id": "deploy-441",
+      "version": "v2.4.1",
+      "deployed_at": "2025-06-01T02:14:00Z",
+      "deployed_by": "ravi.k",
+      "commit_message": "feat: add in-memory session cache for faster auth lookups",
+      "changes": ["Added LRU-style session cache (no eviction policy set)", "Memory limit unchanged at 512Mi"],
+      "rollback_available": "v2.4.0"
+    },
+    {
+      "deploy_id": "deploy-440",
+      "version": "v2.4.0",
+      "deployed_at": "2025-05-30T14:00:00Z",
+      "deployed_by": "priya.s",
+      "commit_message": "fix: handle null payment method gracefully",
+      "changes": ["Null check on payment_method field"],
+      "rollback_available": "v2.3.9"
+    }
+  ],
+  "checkout-service": [
+    {
+      "deploy_id": "migration-88",
+      "version": "schema-migration-88",
+      "deployed_at": "2025-05-31T22:30:00Z",
+      "deployed_by": "priya.s",
+      "commit_message": "chore: add order_metadata JSONB column, drop unused index",
+      "changes": ["Added order_metadata JSONB column", "Dropped composite index (status, created_at) — marked unused in staging"],
+      "rollback_available": "migration-87"
+    }
+  ],
+  "logging-infra": [
+    {
+      "deploy_id": "index-template-update",
+      "version": "elk-config-v1.2",
+      "deployed_at": "2025-05-20T10:00:00Z",
+      "deployed_by": "devops-bot",
+      "commit_message": "feat: add prod-payments-* index pattern to Elasticsearch",
+      "changes": ["Created prod-payments-logs-2025 index pattern", "ILM policy not applied — missing policy name field in template"],
+      "rollback_available": "elk-config-v1.1"
+    }
+  ]
+}

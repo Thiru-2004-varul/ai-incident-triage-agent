@@ -1,0 +1,119 @@
+{
+  "name": "AI Incident Triage Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pagerduty-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "PagerDuty Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Receives PagerDuty alert payload. In production: set your PagerDuty webhook URL to http://YOUR_N8N_HOST/webhook/pagerduty-webhook. For testing: use the mock trigger node instead."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize PagerDuty payload to our standard alert format\nconst body = $input.first().json.body || $input.first().json;\n\n// Handle both real PagerDuty v3 webhooks and our mock format\nconst alert = body.messages?.[0]?.event?.data || body;\n\nreturn [{\n  json: {\n    id: alert.id || 'PD-UNKNOWN',\n    title: alert.title || alert.summary || 'Unknown alert',\n    severity: alert.severity || 'P2',\n    service: alert.service?.name || alert.service || 'unknown',\n    environment: alert.environment || 'production',\n    cluster: alert.cluster || 'prod-eks',\n    namespace: alert.namespace || 'prod',\n    triggered_at: alert.triggered_at || new Date().toISOString(),\n    details: alert.details || alert.body?.details_summary || ''\n  }\n}];"
+      },
+      "id": "node-normalize",
+      "name": "Normalize Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "command": "cd /path/to/ai-incident-triage-agent && python agent/agent.py --alert '{{ $json | tojson }}'",
+        "executeOnce": false
+      },
+      "id": "node-python-agent",
+      "name": "Run Triage Agent (Python + Claude)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "notes": "UPDATE THE PATH: replace /path/to/ai-incident-triage-agent with your actual repo path. The agent calls Claude API, fetches logs and deploys, returns structured JSON."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the JSON output from the Python agent\nconst stdout = $input.first().json.stdout;\ntry {\n  const result = JSON.parse(stdout);\n  return [{ json: result }];\n} catch (e) {\n  throw new Error('Agent output parse error: ' + e.message + '\\nRaw output: ' + stdout);\n}"
+      },
+      "id": "node-parse-output",
+      "name": "Parse Agent Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "requestMethod": "POST",
+        "url": "https://YOUR_DOMAIN.atlassian.net/rest/api/3/issue",
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "json"
+        },
+        "bodyParametersJson": "={\n  \"fields\": {\n    \"project\": { \"key\": \"OPS\" },\n    \"summary\": \"{{ $json.jira_summary }}\",\n    \"description\": {\n      \"type\": \"doc\",\n      \"version\": 1,\n      \"content\": [{\n        \"type\": \"paragraph\",\n        \"content\": [{\n          \"type\": \"text\",\n          \"text\": \"Classification: {{ $json.classification }}\\nConfidence: {{ $json.confidence }}\\nRoot Cause: {{ $json.root_cause }}\\n\\nRunbook:\\n{{ $json.runbook.join('\\n') }}\"\n        }]\n      }]\n    },\n    \"issuetype\": { \"name\": \"Incident\" },\n    \"priority\": { \"name\": \"{{ $json.jira_priority }}\" },\n    \"labels\": {{ $json.jira_labels }}\n  }\n}"
+      },
+      "id": "node-jira",
+      "name": "Create Jira Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1120, 200],
+      "notes": "Setup: replace YOUR_DOMAIN with your Jira Cloud domain. Add Basic Auth credential: email + Jira API token (free at id.atlassian.net). Create project with key OPS."
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#incidents",
+        "text": "=:rotating_light: *{{ $json.severity_confirmed }}* — {{ $json.alert_title }}\n\n*Classification:* {{ $json.classification }} ({{ $json.confidence }} confidence)\n*Root cause:* {{ $json.root_cause }}\n\n*Service:* {{ $json.service }} | *Env:* {{ $json.environment }}\n\n{{ $json.slack_message }}\n\n:jira: Jira ticket created automatically."
+      },
+      "id": "node-slack",
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1120, 420],
+      "notes": "Setup: add Slack credential (OAuth or Bot Token). Change #incidents to your channel. Free Slack allows incoming webhooks."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"triaged\", \"alert_id\": $json.alert_id, \"classification\": $json.classification, \"jira_summary\": $json.jira_summary } }}"
+      },
+      "id": "node-response",
+      "name": "Respond to PagerDuty",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "PagerDuty Webhook": {
+      "main": [[{ "node": "Normalize Alert", "type": "main", "index": 0 }]]
+    },
+    "Normalize Alert": {
+      "main": [[{ "node": "Run Triage Agent (Python + Claude)", "type": "main", "index": 0 }]]
+    },
+    "Run Triage Agent (Python + Claude)": {
+      "main": [[{ "node": "Parse Agent Output", "type": "main", "index": 0 }]]
+    },
+    "Parse Agent Output": {
+      "main": [[
+        { "node": "Create Jira Ticket", "type": "main", "index": 0 },
+        { "node": "Slack Alert", "type": "main", "index": 0 }
+      ]]
+    },
+    "Create Jira Ticket": {
+      "main": [[{ "node": "Respond to PagerDuty", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

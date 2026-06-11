@@ -1,0 +1,35 @@
+[
+  {
+    "id": "PD-001",
+    "title": "CrashLoopBackOff — payments-api",
+    "severity": "P1",
+    "service": "payments-api",
+    "environment": "production",
+    "cluster": "prod-eks-us-east-1",
+    "namespace": "prod",
+    "triggered_at": "2025-06-01T02:18:03Z",
+    "details": "Pod payments-api-7f9b4c-xk2lm has restarted 4 times in 5 minutes. OOMKilled."
+  },
+  {
+    "id": "PD-002",
+    "title": "p99 latency > 4s — checkout-service",
+    "severity": "P2",
+    "service": "checkout-service",
+    "environment": "production",
+    "cluster": "prod-eks-us-east-1",
+    "namespace": "prod",
+    "triggered_at": "2025-06-01T03:41:22Z",
+    "details": "checkout-service p99 latency exceeded 4000ms threshold. RDS slow queries detected."
+  },
+  {
+    "id": "PD-003",
+    "title": "Disk usage 88% — logging-node-03",
+    "severity": "P3",
+    "service": "logging-infra",
+    "environment": "production",
+    "cluster": "logging-node-03",
+    "namespace": "logging",
+    "triggered_at": "2025-06-01T04:05:01Z",
+    "details": "Disk at 88% (440GB/500GB). Elasticsearch index prod-payments-logs-2025 has no ILM policy."
+  }
+]

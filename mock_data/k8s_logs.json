@@ -1,0 +1,25 @@
+{
+  "payments-api": [
+    "[02:18:01] INFO  Starting payments-api v2.4.1",
+    "[02:18:02] INFO  Loading in-memory session cache (no eviction policy)",
+    "[02:18:03] FATAL OOMKilled: container payments-api exceeded memory limit 512Mi",
+    "[02:18:04] WARN  pod payments-api-7f9b4c-xk2lm restarted (count: 3)",
+    "[02:18:05] ERROR Liveness probe failed: dial tcp 10.0.1.42:8080: i/o timeout",
+    "[02:18:07] WARN  Back-off restarting failed container",
+    "[02:18:09] WARN  Pod restarted 4 times in the last 5 minutes"
+  ],
+  "checkout-service": [
+    "[03:41:20] INFO  checkout-service handling order request",
+    "[03:41:22] WARN  slow_query: SELECT * FROM orders WHERE status='pending' AND created_at > ? (3842ms)",
+    "[03:41:23] WARN  slow_query: SELECT * FROM orders WHERE status='pending' AND created_at > ? (3901ms)",
+    "[03:41:24] ERROR checkout timeout: RDS response exceeded 4000ms threshold",
+    "[03:41:25] WARN  connection pool exhausted: 98/100 connections active",
+    "[03:41:26] ERROR 503 returned to client for order #88421"
+  ],
+  "logging-infra": [
+    "[04:05:01] INFO  disk_usage: /dev/sda1 88% (440GB / 500GB used)",
+    "[04:05:01] WARN  elasticsearch: index prod-payments-logs-2025 has no ILM policy attached",
+    "[04:05:02] WARN  elasticsearch: index size growing at 2.1GB/hour",
+    "[04:05:03] INFO  indices without ILM: prod-payments-logs-2025 (210GB)"
+  ]
+}
