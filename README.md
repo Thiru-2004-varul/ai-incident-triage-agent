@@ -168,17 +168,6 @@ Check n8n executions, your Jira project, and Slack channel.
 
 ---
 
-## Resume context
-
-This project is part of a DevOps portfolio demonstrating AI/ML integration on top of cloud-native infrastructure:
-
-- **Project 01** — Multi-AZ AWS architecture (95% uptime SLA)
-- **Project 02** — EKS zero-downtime rolling deployment (Prometheus-verified, 0 errors)
-- **Project 03** — AI Incident Triage Agent ← this repo
-- **Project 04** — Terraform-based Internal Developer Platform (5-min full infra rebuild)
-
----
-
 ## Extending this project
 
 To connect real data sources (when you have access):
@@ -192,6 +181,3 @@ To connect real data sources (when you have access):
 
 ---
 
-## License
-
-MIT
